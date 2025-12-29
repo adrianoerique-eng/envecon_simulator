@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { ReportResult } from '../types';
-import { Copy, Printer, Check, Code, TrendingUp, Zap, CreditCard, BarChart3, FileText, User, ArrowUpRight } from 'lucide-react';
+import { Copy, Check, Code, TrendingUp, Zap, CreditCard, BarChart3, FileText, User, ArrowUpRight } from 'lucide-react';
 
 interface Props {
   result: ReportResult;
@@ -23,7 +23,6 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
 
   const data = result.json;
 
-  // Projeção 12 meses
   const monthlySaving = data?.resumo?.economia_mensal_associado || 0;
   const accumulatedData = Array.from({ length: 12 }, (_, i) => ({
     mes: `mês ${i + 1}`,
@@ -35,18 +34,6 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
     navigator.clipboard.writeText(JSON.stringify(result.json, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Função de impressão simplificada e direta
-  const handlePrint = () => {
-    // Garante que o relatório está visível (se estivesse na aba JSON)
-    if (activeTab !== 'report') {
-      setActiveTab('report');
-      // Pequeno delay para o React atualizar o DOM antes de disparar o print
-      setTimeout(() => window.print(), 150);
-    } else {
-      window.print();
-    }
   };
 
   const formatCurrency = (val: number | undefined | null) => 
@@ -140,22 +127,16 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
           <button 
             type="button" 
             onClick={handleCopy} 
-            className="p-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition-all cursor-pointer"
+            className="p-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition-all cursor-pointer flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+            title="Copiar JSON"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-          </button>
-          
-          <button 
-            type="button"
-            onClick={handlePrint} 
-            className="px-6 py-3 bg-slate-900 hover:bg-black text-white rounded-xl transition-all flex items-center gap-2 text-[10px] font-black shadow-xl cursor-pointer active:scale-95"
-          >
-            <Printer className="w-4 h-4" /> SALVAR EM PDF
+            {copied ? 'Copiado' : 'Copiar Dados'}
           </button>
         </div>
       </div>
 
-      <div className={`bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[10mm] md:p-[15mm] border border-slate-200 print-report-container ${activeTab === 'json' ? 'hidden' : 'block'}`}>
+      <div className={`bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[10mm] md:p-[15mm] border border-slate-200 print-report-container ${activeTab === 'json' ? 'hidden print:block' : 'block'}`}>
         <div className="flex flex-col items-center mb-10 pb-6 border-b-2 border-slate-900">
             <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none text-center">SIMULAÇÃO DE ECONOMIA</h1>
             <p className="text-xs font-bold text-emerald-600 uppercase tracking-[0.5em] mt-3 leading-none">ENVECOM</p>

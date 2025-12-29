@@ -6,6 +6,11 @@ import { generateEnvecomReport } from './services/geminiService';
 import { BillInputs, ReportResult } from './types';
 import { Sun, Leaf, ArrowRight, AlertCircle, Instagram, Zap, Shield, CheckCircle } from 'lucide-react';
 
+// Ícone para os passos da landing page (definido antes para evitar ReferenceError)
+const UploadCloud: React.FC<{className?: string}> = ({className}) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19a5.5 5.5 0 0 0 2.5-10.5 8.5 8.5 0 1 0-14.5 4.5"/><path d="m12 13-3 3"/><path d="m12 13 3 3"/><path d="M12 21v-8"/></svg>
+);
+
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ReportResult | null>(null);
@@ -64,7 +69,6 @@ const App: React.FC = () => {
       <main className="flex-grow">
         {/* Hero Section */}
         <div className="bg-emerald-700 text-white pt-24 pb-48 no-print relative overflow-hidden">
-          {/* Decorative Leaf */}
           <div className="absolute top-0 right-0 w-64 h-64 opacity-5 pointer-events-none translate-x-1/4 -translate-y-1/4">
             <Leaf className="w-full h-full rotate-45" />
           </div>
@@ -74,7 +78,6 @@ const App: React.FC = () => {
               ASSOCIAÇÃO ENERGIA VERDE COMPARTILHADA
             </h2>
             
-            {/* Benefits Labels */}
             <div className="flex flex-wrap justify-center gap-2 md:gap-3 mt-8 max-w-5xl mx-auto">
               <div className="bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full text-[9px] font-bold uppercase tracking-widest flex items-center gap-2">
                 <Zap className="w-3.5 h-3.5 text-emerald-300" /> SEM INVESTIMENTO
@@ -92,10 +95,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Area */}
         <div className="max-w-4xl mx-auto px-4 -mt-24 relative z-10 pb-20 space-y-16">
-          
-          {/* Form Container */}
           <div className="no-print">
             <ReportForm 
               onSubmit={handleSubmit} 
@@ -103,7 +103,6 @@ const App: React.FC = () => {
             />
           </div>
 
-          {/* Objective "How it Works" Section */}
           <section id="como-funciona" className="py-12 no-print">
             <div className="text-center mb-12">
               <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-3">Metodologia</h3>
@@ -171,7 +170,6 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-slate-900 text-slate-200 py-20 no-print">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-16 mb-16">
@@ -240,10 +238,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-// Simple icon for landing page steps
-const UploadCloud: React.FC<{className?: string}> = ({className}) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19a5.5 5.5 0 0 0 2.5-10.5 8.5 8.5 0 1 0-14.5 4.5"/><path d="m12 13-3 3"/><path d="m12 13 3 3"/><path d="M12 21v-8"/></svg>
-);
 
 export default App;
