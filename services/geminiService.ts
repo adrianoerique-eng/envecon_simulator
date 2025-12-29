@@ -33,8 +33,8 @@ export const extractDataFromImage = async (base64Image: string, mimeType: string
  * Processamento instantâneo do relatório com separação rigorosa de bandeiras.
  */
 export const generateEnvecomReport = async (inputs: BillInputs): Promise<ReportResult> => {
-  // Pequeno atraso para manter a percepção de processamento
-  await new Promise(resolve => setTimeout(resolve, 350));
+  // Delay mínimo apenas para UI
+  await new Promise(resolve => setTimeout(resolve, 200));
 
   const total = inputs.consumo_total_kwh || 0;
   let minimo = 0;
@@ -47,7 +47,7 @@ export const generateEnvecomReport = async (inputs: BillInputs): Promise<ReportR
   
   const te = inputs.tarifa_te || 0;
   const tusdOriginal = inputs.tarifa_tusd || 0;
-  const tusdAjustada = tusdOriginal * 0.8; // Dedução de 20% ICMS
+  const tusdAjustada = tusdOriginal * 0.8; 
   const bAmarela = inputs.tarifa_bandeira_amarela || 0;
   const bVermelha = inputs.tarifa_bandeira_vermelha || 0;
 
@@ -66,7 +66,7 @@ export const generateEnvecomReport = async (inputs: BillInputs): Promise<ReportR
   
   const reducaoPercentual = faturaAtual > 0 ? ((faturaAtual - novoTotalFinal) / faturaAtual * 100) : 0;
 
-  // Garantindo que Amarela e Vermelha sejam itens separados no array
+  // Bandeiras SEMPRE separadas se tiverem valor
   const itensCompensacao = [
     { descricao: "Tarifa de Energia (TE)", consumo: compensado, tarifa: te, valor: valorTE },
     { descricao: "TUSD (Ajustada -20% ICMS)", consumo: compensado, tarifa: tusdAjustada, valor: valorTUSD }

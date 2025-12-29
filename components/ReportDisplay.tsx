@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { ReportResult } from '../types';
 import { Copy, Printer, Check, Code, TrendingUp, Zap, CreditCard, BarChart3, FileText, User, ArrowUpRight } from 'lucide-react';
 
@@ -20,7 +20,6 @@ const DashboardSection = ({ title, icon: Icon, children }: { title: string, icon
 const ReportDisplay: React.FC<Props> = ({ result }) => {
   const [activeTab, setActiveTab] = useState<'report' | 'json'>('report');
   const [copied, setCopied] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
 
   const data = result.json;
 
@@ -38,43 +37,23 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Lógica de impressão ultra-robusta
-  const handlePrint = useCallback(() => {
-    setIsPrinting(true);
-    
-    // 1. Forçar aba correta
+  // Função de impressão simplificada e direta
+  const handlePrint = () => {
+    // Garante que o relatório está visível (se estivesse na aba JSON)
     if (activeTab !== 'report') {
       setActiveTab('report');
-    }
-
-    // 2. Título dinâmico para o arquivo final
-    const clientName = data?.identificacao?.cliente?.replace(/\s+/g, '_') || 'Associado';
-    const originalTitle = document.title;
-    document.title = `ENVECOM_${clientName}_${new Date().getTime()}`;
-
-    // 3. Disparo imediato ou após troca de aba
-    const triggerPrint = () => {
-      window.print();
-      document.title = originalTitle;
-      setIsPrinting(false);
-    };
-
-    if (activeTab !== 'report') {
-      // Se trocou de aba, espera o React renderizar o DOM visível
-      setTimeout(triggerPrint, 300);
+      // Pequeno delay para o React atualizar o DOM antes de disparar o print
+      setTimeout(() => window.print(), 150);
     } else {
-      // Se já estava no relatório, dispara quase imediatamente
-      setTimeout(triggerPrint, 50);
+      window.print();
     }
-  }, [activeTab, data]);
+  };
 
   const formatCurrency = (val: number | undefined | null) => 
     (val ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const renderChart = () => {
     const maxVal = totalAnual > 0 ? totalAnual * 1.15 : 100;
-    const axisTitleClass = "text-[11px] font-black text-slate-800 uppercase tracking-tight";
-
     return (
       <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 relative overflow-visible print:border-none print:p-0">
         <div className="flex items-center justify-between mb-16">
@@ -82,7 +61,6 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
             <BarChart3 className="w-5 h-5 text-emerald-600" />
             <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Projeção Acumulada de Economia</h4>
           </div>
-          
           <div className="bg-emerald-600 text-white px-5 py-2.5 rounded-2xl shadow-xl shadow-emerald-100 flex items-center gap-3 border border-emerald-500 z-10 no-print">
             <div className="bg-white/20 p-2 rounded-lg">
                 <ArrowUpRight className="w-4 h-4 text-white" />
@@ -93,11 +71,10 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
             </div>
           </div>
         </div>
-
         <div className="relative flex flex-col items-center">
           <div className="flex w-full h-80 relative">
             <div className="absolute -left-24 top-1/2 -translate-y-1/2 -rotate-90 origin-center whitespace-nowrap">
-              <span className={axisTitleClass}>Economia em R$ (acumulado)</span>
+              <span className="text-[11px] font-black text-slate-800 uppercase tracking-tight">Economia em R$ (acumulado)</span>
             </div>
             <div className="w-16 shrink-0 border-r-2 border-slate-200"></div>
             <div className="flex-grow flex items-end justify-around px-4 relative h-[250px]">
@@ -105,7 +82,6 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
                 {[0, 1, 2, 3].map(v => <div key={v} className="w-full border-t border-slate-100"></div>)}
                 <div className="w-full"></div>
               </div>
-
               {accumulatedData.map((item, i) => {
                 const heightPercent = (item.accumulado / maxVal) * 100;
                 return (
@@ -138,8 +114,7 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
 
   return (
     <div className="flex flex-col gap-4 relative">
-      {/* Menu de Ações Corrigido */}
-      <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-2 flex flex-wrap items-center justify-between gap-3 no-print sticky top-[80px] z-[100]">
+      <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-2 flex flex-wrap items-center justify-between gap-3 no-print sticky top-[80px] z-[150]">
         <div className="flex items-center gap-2">
             <div className="flex bg-slate-100 p-1 rounded-lg">
                 <button
@@ -173,17 +148,14 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
           <button 
             type="button"
             onClick={handlePrint} 
-            disabled={isPrinting}
-            className={`px-6 py-3 bg-slate-900 hover:bg-black text-white rounded-xl transition-all flex items-center gap-2 text-[10px] font-black shadow-xl cursor-pointer active:scale-95 ${isPrinting ? 'opacity-50' : ''}`}
+            className="px-6 py-3 bg-slate-900 hover:bg-black text-white rounded-xl transition-all flex items-center gap-2 text-[10px] font-black shadow-xl cursor-pointer active:scale-95"
           >
-            <Printer className={`w-4 h-4 ${isPrinting ? 'animate-pulse' : ''}`} /> 
-            {isPrinting ? 'PREPARANDO PDF...' : 'SALVAR EM PDF'}
+            <Printer className="w-4 h-4" /> SALVAR EM PDF
           </button>
         </div>
       </div>
 
       <div className={`bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[10mm] md:p-[15mm] border border-slate-200 print-report-container ${activeTab === 'json' ? 'hidden' : 'block'}`}>
-        
         <div className="flex flex-col items-center mb-10 pb-6 border-b-2 border-slate-900">
             <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none text-center">SIMULAÇÃO DE ECONOMIA</h1>
             <p className="text-xs font-bold text-emerald-600 uppercase tracking-[0.5em] mt-3 leading-none">ENVECOM</p>
