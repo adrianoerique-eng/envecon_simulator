@@ -5,7 +5,21 @@ import { BillInputs, ReportResult, ConnectionType } from "../types";
 export const extractDataFromImage = async (base64Image: string, mimeType: string): Promise<Partial<BillInputs>> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Extraia dados desta fatura para JSON: nome, uc, distribuidora, mes_ref, consumo_total_kwh, tarifa_te, tarifa_tusd, tarifa_bandeira_amarela, tarifa_bandeira_vermelha, iluminacao_publica. Retorne apenas JSON puro.`;
+  const prompt = `Analise esta fatura de energia e extraia os seguintes campos exatamente para este formato JSON. 
+  Importante: extraia valores numéricos puros (ex: 0.32 em vez de "R$ 0,32"). 
+  Campos:
+  - nome: Nome completo do cliente
+  - uc: Número da Unidade Consumidora (UC)
+  - distribuidora: Nome da empresa (ex: ENEL, EQUATORIAL)
+  - mes_ref: Mês/Ano de referência (ex: 12/2024)
+  - consumo_total_kwh: Total de kWh consumidos no mês
+  - tarifa_te: Valor da Tarifa de Energia (TE) por kWh
+  - tarifa_tusd: Valor da Tarifa de Uso do Sistema (TUSD) por kWh
+  - tarifa_bandeira_amarela: Valor da bandeira amarela (se houver)
+  - tarifa_bandeira_vermelha: Valor da bandeira vermelha (se houver)
+  - iluminacao_publica: Valor total da Contribuição de Iluminação Pública (CIP/COSIP)
+  
+  Retorne APENAS o JSON.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -18,19 +32,20 @@ export const extractDataFromImage = async (base64Image: string, mimeType: string
       },
       config: {
         responseMimeType: "application/json",
-        temperature: 0,
+        temperature: 0.1,
       }
     });
 
     return JSON.parse(response.text || "{}");
   } catch (error) {
-    console.error("Erro na extração:", error);
+    console.error("Erro na extração Gemini:", error);
     throw error;
   }
 };
 
 export const generateEnvecomReport = async (inputs: BillInputs): Promise<ReportResult> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
+  // Simulação de processamento para UX
+  await new Promise(resolve => setTimeout(resolve, 800));
 
   const total = inputs.consumo_total_kwh || 0;
   let minimo = 0;
@@ -97,7 +112,7 @@ export const generateEnvecomReport = async (inputs: BillInputs): Promise<ReportR
   };
 
   return {
-    text: "Simulação finalizada.",
+    text: "Relatório gerado com sucesso.",
     json: jsonResult
   };
 };
