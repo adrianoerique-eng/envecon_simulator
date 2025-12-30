@@ -1,25 +1,67 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { BillInputs, ReportResult, ConnectionType } from "../types";
+import { BillInputs, ReportResult } from "../types";
+
+/**
+ * Comprime a imagem mantendo alta resolução e nitidez para leitura de texto (OCR).
+ */
+export const compressImage = async (base64Str: string, maxWidth = 2560, quality = 0.95): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxWidth) {
+          width *= maxWidth / height;
+          height = maxWidth;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error("Erro no processamento da imagem"));
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      // JPEG com alta qualidade para não perder detalhes dos números
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve(dataUrl.split(',')[1]);
+    };
+    img.onerror = () => reject(new Error("Erro ao carregar arquivo de imagem"));
+  });
+};
 
 export const extractDataFromImage = async (base64Image: string, mimeType: string): Promise<Partial<BillInputs>> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Analise esta fatura de energia e extraia os seguintes campos exatamente para este formato JSON. 
-  Importante: extraia valores numéricos puros (ex: 0.32 em vez de "R$ 0,32"). 
-  Campos:
-  - nome: Nome completo do cliente
-  - uc: Número da Unidade Consumidora (UC)
-  - distribuidora: Nome da empresa (ex: ENEL, EQUATORIAL)
-  - mes_ref: Mês/Ano de referência (ex: 12/2024)
-  - consumo_total_kwh: Total de kWh consumidos no mês
-  - tarifa_te: Valor da Tarifa de Energia (TE) por kWh
-  - tarifa_tusd: Valor da Tarifa de Uso do Sistema (TUSD) por kWh
-  - tarifa_bandeira_amarela: Valor da bandeira amarela (se houver)
-  - tarifa_bandeira_vermelha: Valor da bandeira vermelha (se houver)
-  - iluminacao_publica: Valor total da Contribuição de Iluminação Pública (CIP/COSIP)
+  // Prompt original focado em extração de dados brutos
+  const prompt = `Analise esta fatura de energia e extraia os seguintes dados exatamente no formato JSON abaixo. 
+  Importante: capture apenas os números decimais usando ponto (ex: 0.75832) e ignore símbolos de moeda (R$).
   
-  Retorne APENAS o JSON.`;
+  Campos necessários:
+  {
+    "nome": "Nome do cliente",
+    "uc": "Número da Unidade Consumidora",
+    "distribuidora": "Nome da empresa de energia",
+    "mes_ref": "Mês/Ano de referência (ex: 01/2025)",
+    "consumo_total_kwh": 0,
+    "tarifa_te": 0,
+    "tarifa_tusd": 0,
+    "tarifa_bandeira_amarela": 0,
+    "tarifa_bandeira_vermelha": 0,
+    "iluminacao_publica": 0
+  }
+  
+  Retorne apenas o código JSON.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -27,35 +69,32 @@ export const extractDataFromImage = async (base64Image: string, mimeType: string
       contents: {
         parts: [
           { text: prompt },
-          { inlineData: { data: base64Image, mimeType } }
+          { inlineData: { data: base64Image, mimeType: 'image/jpeg' } }
         ]
       },
       config: {
-        responseMimeType: "application/json",
         temperature: 0.1,
+        responseMimeType: "application/json"
       }
     });
 
-    return JSON.parse(response.text || "{}");
-  } catch (error) {
-    console.error("Erro na extração Gemini:", error);
-    throw error;
+    const text = response.text;
+    if (!text) throw new Error("A IA não conseguiu ler os dados da imagem.");
+    return JSON.parse(text);
+  } catch (error: any) {
+    console.error("Erro Gemini:", error);
+    if (error.message?.includes("API_KEY")) {
+      throw new Error("Erro de Configuração: Verifique se a API_KEY está correta no Vercel.");
+    }
+    throw new Error("Não foi possível extrair os dados. Tente tirar uma foto mais de perto e com melhor iluminação.");
   }
 };
 
 export const generateEnvecomReport = async (inputs: BillInputs): Promise<ReportResult> => {
-  // Simulação de processamento para UX
-  await new Promise(resolve => setTimeout(resolve, 800));
-
   const total = inputs.consumo_total_kwh || 0;
-  let minimo = 0;
-  
-  if (inputs.tipo_ligacao === 'mono') minimo = 30;
-  else if (inputs.tipo_ligacao === 'bi') minimo = 50;
-  else if (inputs.tipo_ligacao === 'tri') minimo = 100;
+  let minimo = inputs.tipo_ligacao === 'mono' ? 30 : inputs.tipo_ligacao === 'bi' ? 50 : 100;
 
   const compensado = Math.max(0, total - minimo);
-  
   const te = inputs.tarifa_te || 0;
   const tusdOriginal = inputs.tarifa_tusd || 0;
   const tusdAjustada = tusdOriginal * 0.8; 
@@ -74,7 +113,6 @@ export const generateEnvecomReport = async (inputs: BillInputs): Promise<ReportR
   const tarifaCheia = te + tusdOriginal + bAmarela + bVermelha;
   const faturaAtual = (total * tarifaCheia) + (inputs.iluminacao_publica || 0);
   const novoTotalFinal = (faturaAtual - valorCreditoTotal) + repasseEnvecom;
-  
   const reducaoPercentual = faturaAtual > 0 ? ((faturaAtual - novoTotalFinal) / faturaAtual * 100) : 0;
 
   const itensCompensacao = [
@@ -82,37 +120,17 @@ export const generateEnvecomReport = async (inputs: BillInputs): Promise<ReportR
     { descricao: "TUSD (Ajustada -20% ICMS)", consumo: compensado, tarifa: tusdAjustada, valor: valorTUSD }
   ];
 
-  if (bAmarela > 0) {
-    itensCompensacao.push({ descricao: "Bandeira Amarela", consumo: compensado, tarifa: bAmarela, valor: valorAmarela });
-  }
-  if (bVermelha > 0) {
-    itensCompensacao.push({ descricao: "Bandeira Vermelha", consumo: compensado, tarifa: bVermelha, valor: valorVermelha });
-  }
-
-  const jsonResult = {
-    identificacao: {
-      cliente: inputs.nome,
-      uc: inputs.uc,
-      distribuidora: inputs.distribuidora,
-      mes_referencia: inputs.mes_ref,
-      tipo_ligacao: inputs.tipo_ligacao
-    },
-    consumo: { total, minimo, compensado },
-    itens_compensacao: itensCompensacao,
-    resumo: {
-      valor_credito_total: valorCreditoTotal,
-      economia_mensal_associado: economiaAssociado,
-      repasse_envecom: repasseEnvecom,
-      reducao_percentual: parseFloat(reducaoPercentual.toFixed(2))
-    },
-    comparativo: {
-      fatura_atual: faturaAtual,
-      novo_total_final: novoTotalFinal
-    }
-  };
+  if (bAmarela > 0) itensCompensacao.push({ descricao: "Bandeira Amarela", consumo: compensado, tarifa: bAmarela, valor: valorAmarela });
+  if (bVermelha > 0) itensCompensacao.push({ descricao: "Bandeira Vermelha", consumo: compensado, tarifa: bVermelha, valor: valorVermelha });
 
   return {
-    text: "Relatório gerado com sucesso.",
-    json: jsonResult
+    text: "Sucesso",
+    json: {
+      identificacao: { cliente: inputs.nome, uc: inputs.uc, distribuidora: inputs.distribuidora, mes_referencia: inputs.mes_ref, tipo_ligacao: inputs.tipo_ligacao },
+      consumo: { total, minimo, compensado },
+      itens_compensacao: itensCompensacao,
+      resumo: { valor_credito_total: valorCreditoTotal, economia_mensal_associado: economiaAssociado, repasse_envecom: repasseEnvecom, reducao_percentual: parseFloat(reducaoPercentual.toFixed(2)) },
+      comparativo: { fatura_atual: faturaAtual, novo_total_final: novoTotalFinal }
+    }
   };
 };

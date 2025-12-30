@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { ReportResult } from '../types';
-import { TrendingUp, Zap, CreditCard, BarChart3, User, ArrowUpRight, Sun } from 'lucide-react';
+import { TrendingUp, Zap, CreditCard, BarChart3, User, ArrowUpRight, Sun, FileDown, CheckCircle } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 interface Props {
   result: ReportResult;
@@ -22,6 +24,8 @@ const DashboardSection = ({ title, icon: Icon, children }: { title: string, icon
 );
 
 const ReportDisplay: React.FC<Props> = ({ result }) => {
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const data = result.json;
 
   const monthlySaving = data?.resumo?.economia_mensal_associado || 0;
@@ -33,6 +37,57 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
 
   const formatCurrency = (val: number | undefined | null) => 
     (val ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const handleDownloadPDF = async () => {
+    if (!reportRef.current) return;
+    
+    setIsGeneratingPDF(true);
+    
+    try {
+      // Pequeno delay para garantir que qualquer animação tenha terminado
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2, // Aumenta a qualidade/resolução
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        onclone: (clonedDoc) => {
+          // Oculta o botão de download no clone que será transformado em imagem
+          const btn = clonedDoc.getElementById('pdf-download-btn');
+          if (btn) btn.style.display = 'none';
+        }
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      
+      const finalWidth = imgWidth * ratio;
+      const finalHeight = imgHeight * ratio;
+      
+      const x = (pdfWidth - finalWidth) / 2;
+      const y = 0; // Começa do topo para aproveitar a página única
+
+      pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
+      pdf.save(`Simulacao_ENVECOM_${data.identificacao?.cliente || 'Report'}.pdf`);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      alert("Houve um erro ao gerar o PDF. Tente novamente.");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   const renderChart = () => {
     const maxVal = totalAnual > 0 ? totalAnual * 1.15 : 100;
@@ -91,8 +146,36 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
   };
 
   return (
-    <div className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-500">
+    <div 
+      ref={reportRef}
+      className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-500 relative"
+    >
       <div className="p-6 sm:p-10 md:p-16">
+        {/* Botão de Download PDF (Visível apenas na web) */}
+        <div id="pdf-download-btn" className="absolute top-8 right-8 no-print">
+          <button
+            onClick={handleDownloadPDF}
+            disabled={isGeneratingPDF}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 ${
+              isGeneratingPDF 
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'
+            }`}
+          >
+            {isGeneratingPDF ? (
+              <>
+                <div className="w-3 h-3 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin" />
+                Gerando PDF...
+              </>
+            ) : (
+              <>
+                <FileDown className="w-4 h-4" />
+                Salvar PDF
+              </>
+            )}
+          </button>
+        </div>
+
         {/* Cabeçalho do Relatório */}
         <div className="flex flex-col items-center mb-16 text-center">
             <div className="w-16 h-1.5 bg-emerald-600 rounded-full mb-8"></div>
@@ -129,7 +212,7 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
                   <p className="text-3xl font-black text-slate-800 leading-none">{data.consumo?.total} <span className="text-sm font-medium">kWh</span></p>
                 </div>
                 <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center text-center">
-                  <p className="text-[9px] font-bold text-slate-500 uppercase mb-3 tracking-widest">Disponibilidade (mínima)</p>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase mb-3 tracking-widest">Disponibilidade</p>
                   <p className="text-3xl font-black text-slate-800 leading-none">{data.consumo?.minimo} <span className="text-sm font-medium">kWh</span></p>
                 </div>
                 <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 flex flex-col items-center text-center">
@@ -173,12 +256,12 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
 
             {/* Cards de Repasse e Economia */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-               <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl flex flex-col items-center justify-center text-center transform transition hover:scale-[1.01] active:scale-95 cursor-default">
+               <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl flex flex-col items-center justify-center text-center transition hover:scale-[1.01]">
                   <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-5">Repasse (80%)</p>
                   <p className="text-4xl font-black leading-none">{formatCurrency(data.resumo?.repasse_envecom)}</p>
                   <p className="text-[9px] text-slate-500 mt-5 font-bold uppercase tracking-widest">Contribuição Associação</p>
                </div>
-               <div className="bg-emerald-600 p-8 rounded-[2.5rem] text-white shadow-2xl flex flex-col items-center justify-center text-center transform transition hover:scale-[1.01] active:scale-95 cursor-default">
+               <div className="bg-emerald-600 p-8 rounded-[2.5rem] text-white shadow-2xl flex flex-col items-center justify-center text-center transition hover:scale-[1.01]">
                   <p className="text-[10px] font-black text-emerald-50 uppercase tracking-widest mb-5">Sua Economia (20%)</p>
                   <p className="text-4xl font-black leading-none">{formatCurrency(data.resumo?.economia_mensal_associado)}</p>
                   <p className="text-[9px] text-emerald-100/60 mt-5 font-bold uppercase tracking-widest">Lucro Líquido Mensal</p>
