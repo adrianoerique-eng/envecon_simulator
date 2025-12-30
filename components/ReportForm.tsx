@@ -72,18 +72,25 @@ const ReportForm: React.FC<Props> = ({ onSubmit, isLoading }) => {
   };
 
   const loadExampleData = () => {
+    // Gerando dados aleatórios para privacidade e demonstração dinâmica
+    const randomId = Math.floor(Math.random() * 9000) + 1000;
+    const randomUC = Math.floor(Math.random() * 8999999) + 1000000;
+    const randomConsumo = Math.floor(Math.random() * 450) + 150;
+    const now = new Date();
+    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+    
     setFormData({
-      nome: 'Francinete Ferreira',
-      uc: '5121900',
+      nome: `ASSOCIADO EXEMPLO ${randomId}`,
+      uc: randomUC.toString(),
       distribuidora: 'ENEL',
-      mes_ref: '12/2025',
-      tipo_ligacao: 'mono',
-      consumo_total_kwh: 188,
-      tarifa_te: 0.32766,
-      tarifa_tusd: 0.62154,
+      mes_ref: `${currentMonth}/${now.getFullYear()}`,
+      tipo_ligacao: (['mono', 'bi', 'tri'] as const)[Math.floor(Math.random() * 3)],
+      consumo_total_kwh: randomConsumo,
+      tarifa_te: parseFloat((0.32 + Math.random() * 0.05).toFixed(5)),
+      tarifa_tusd: parseFloat((0.61 + Math.random() * 0.05).toFixed(5)),
       tarifa_bandeira_amarela: 0.02165,
-      tarifa_bandeira_vermelha: 0.00782,
-      iluminacao_publica: 24.39,
+      tarifa_bandeira_vermelha: 0,
+      iluminacao_publica: parseFloat((18 + Math.random() * 15).toFixed(2)),
       outros_itens_texto: ''
     });
     setIsDataReviewing(true);
@@ -137,7 +144,7 @@ const ReportForm: React.FC<Props> = ({ onSubmit, isLoading }) => {
           <div>
             <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-1">Dica de Especialista</p>
             <p className="text-sm text-slate-600 leading-snug">
-              Economize tempo! Clique em <strong>"Escolher uma foto"</strong> e anexe sua fatura. Nossa Inteligência Artificial preencherá tudo para você revisar.
+              Clique em <strong>“Escolher uma foto”</strong>, anexe a fatura e revise os dados preenchidos automaticamente pela IA.
             </p>
           </div>
         </div>

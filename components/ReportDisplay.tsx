@@ -129,7 +129,7 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
                   <p className="text-3xl font-black text-slate-800 leading-none">{data.consumo?.total} <span className="text-sm font-medium">kWh</span></p>
                 </div>
                 <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center text-center">
-                  <p className="text-[9px] font-bold text-slate-500 uppercase mb-3 tracking-widest">Disponibilidade</p>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase mb-3 tracking-widest">Disponibilidade (mínima)</p>
                   <p className="text-3xl font-black text-slate-800 leading-none">{data.consumo?.minimo} <span className="text-sm font-medium">kWh</span></p>
                 </div>
                 <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 flex flex-col items-center text-center">
