@@ -1,9 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { ReportResult } from '../types';
-import { TrendingUp, Zap, CreditCard, BarChart3, User, ArrowUpRight, Sun, FileDown, CheckCircle } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+import { TrendingUp, Zap, CreditCard, BarChart3, User, ArrowUpRight, Sun, FileDown } from 'lucide-react';
 
 interface Props {
   result: ReportResult;
@@ -46,10 +44,12 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
 
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
-    
     setIsGeneratingPDF(true);
     
     try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
       await new Promise(resolve => setTimeout(resolve, 400));
 
       const canvas = await html2canvas(reportRef.current, {
@@ -85,7 +85,6 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
       const marginX = 8;
       const marginY = 8;
       const targetWidth = pdfWidth - (marginX * 2);
-      
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
       
@@ -133,7 +132,7 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
           </div>
         </div>
         
-        <div className="relative flex flex-col items-center w-full">
+        <div className="relative flex flex-col items-center w-full px-2">
           <div className="flex w-full h-48 md:h-64 relative">
             <div className="w-8 md:w-10 shrink-0 border-r border-slate-50"></div>
             
@@ -206,17 +205,21 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
           </button>
         </div>
 
-        {/* Cabeçalho Refinado - Ajustado para evitar sobreposição da data */}
-        <div className="flex flex-col items-center mb-12 md:mb-16 text-center">
-            <div className="w-16 md:w-20 h-1.5 md:h-2 bg-emerald-600 rounded-full mb-3 md:mb-4"></div>
-            <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter uppercase leading-[0.9]">SIMULAÇÃO</h1>
-            <p className="text-[10px] md:text-[13px] text-slate-400 font-bold uppercase tracking-[0.4em] md:tracking-[0.6em] mt-6 md:mt-8">
-                GERADO EM {new Date().toLocaleDateString('pt-BR')}
-            </p>
+        {/* Cabeçalho - Corrigido para evitar sobreposição */}
+        <div className="flex flex-col items-center mb-16 md:mb-24 text-center px-4">
+            <div className="w-16 md:w-24 h-1.5 md:h-2 bg-emerald-600 rounded-full mb-10 md:mb-14"></div>
+            <div className="flex flex-col items-center gap-6 md:gap-10">
+              <h1 className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter uppercase leading-tight">
+                SIMULAÇÃO
+              </h1>
+              <p className="text-[10px] md:text-[14px] text-slate-400 font-bold uppercase tracking-[0.4em] md:tracking-[0.6em] border-t border-slate-100 pt-6 md:pt-8 w-full max-w-xs">
+                  GERADO EM {new Date().toLocaleDateString('pt-BR')}
+              </p>
+            </div>
         </div>
 
         {data ? (
-          <div className="space-y-8 md:space-y-12">
+          <div className="space-y-10 md:space-y-14">
             <DashboardSection title="1. Identificação do Projeto" icon={User}>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
                 {[
@@ -295,25 +298,25 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
             </div>
 
             <DashboardSection title="4. Resumo Comparativo Global" icon={TrendingUp}>
-               <div className="bg-slate-50/50 border border-slate-100 rounded-[2rem] md:rounded-[3rem] p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-3 lg:gap-6 text-center relative overflow-visible">
-                  <div className="flex-1 w-full flex flex-col items-center justify-center py-2">
+               <div className="bg-slate-50/50 border border-slate-100 rounded-[2rem] md:rounded-[3rem] p-4 md:p-8 flex flex-wrap lg:flex-nowrap items-center justify-center lg:justify-between gap-6 md:gap-4 text-center relative overflow-visible">
+                  <div className="flex-1 min-w-[200px] flex flex-col items-center justify-center py-2">
                     <p className="text-[9px] md:text-[11px] font-black text-slate-400 uppercase mb-2 md:mb-3 tracking-widest">Fatura Original</p>
                     <div className="relative inline-flex items-center justify-center">
-                        <span className="text-3xl md:text-4xl font-black text-slate-300 px-3 md:px-4 italic leading-none">{formatCurrency(data.comparativo?.fatura_atual)}</span>
+                        <span className="text-3xl md:text-4xl font-black text-slate-300 px-3 italic leading-none">{formatCurrency(data.comparativo?.fatura_atual)}</span>
                         <div className="absolute w-[110%] h-[3px] md:h-[4px] bg-red-500/70 -rotate-3 pointer-events-none top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
                     </div>
                   </div>
                   
-                  <div className="hidden md:block w-px h-12 bg-slate-200 shrink-0"></div>
+                  <div className="hidden lg:block w-px h-12 bg-slate-200 shrink-0"></div>
                   
-                  <div className="flex-1 w-full flex flex-col items-center justify-center py-2">
+                  <div className="flex-1 min-w-[200px] flex flex-col items-center justify-center py-2">
                     <p className="text-[9px] md:text-[11px] font-black text-emerald-600 uppercase mb-2 md:mb-3 tracking-widest">Novo Valor Final</p>
                     <p className="text-3xl md:text-4xl font-black text-emerald-700 leading-none">{formatCurrency(data.comparativo?.novo_total_final)}</p>
                   </div>
                   
-                  <div className="hidden md:block w-px h-12 bg-slate-200 shrink-0"></div>
+                  <div className="hidden lg:block w-px h-12 bg-slate-200 shrink-0"></div>
                   
-                  <div className="w-full md:flex-1 flex flex-col items-center justify-center border-2 border-emerald-500/10 rounded-[1.5rem] md:rounded-[2rem] py-4 md:py-6 px-4 md:px-5 bg-white shadow-sm shrink-0 min-w-fit">
+                  <div className="w-full lg:flex-1 min-w-[220px] flex flex-col items-center justify-center border-2 border-emerald-500/10 rounded-[1.5rem] md:rounded-[2rem] py-4 md:py-6 px-4 md:px-5 bg-white shadow-sm shrink-0">
                     <p className="text-[8px] md:text-[10px] font-black text-emerald-500 uppercase mb-1 md:mb-2 tracking-widest">Redução Total</p>
                     <p className="text-3xl md:text-4xl font-black text-emerald-600 leading-none whitespace-nowrap">-{formatNumber(data.resumo?.reducao_percentual, 2)}%</p>
                   </div>
