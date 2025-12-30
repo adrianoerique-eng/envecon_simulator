@@ -302,7 +302,7 @@ const ReportForm: React.FC<Props> = ({ onSubmit, isLoading }) => {
           ) : (
             <>
               {isDataReviewing ? <CheckCircle2 className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
-              {isDataReviewing ? 'Confirmar Dados e Gerar Relatório' : 'Gerar Relatório Completo'}
+              {isDataReviewing ? 'Confirmar Dados e Gerar Simulação' : 'Gerar Simulação'}
             </>
           )}
         </button>
