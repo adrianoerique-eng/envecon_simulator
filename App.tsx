@@ -4,13 +4,12 @@ import ReportForm from './components/ReportForm';
 import ReportDisplay from './components/ReportDisplay';
 import { generateEnvecomReport } from './services/geminiService';
 import { BillInputs, ReportResult } from './types';
-import { Sun, ArrowRight, AlertCircle, Printer, X, RefreshCcw } from 'lucide-react';
+import { Sun, ArrowRight, AlertCircle, RefreshCcw, Instagram, Phone, Mail } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ReportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
 
   const handleSubmit = async (inputs: BillInputs) => {
     setIsLoading(true);
@@ -18,9 +17,13 @@ const App: React.FC = () => {
     try {
       const report = await generateEnvecomReport(inputs);
       setResult(report);
-      // Scroll suave para o relatório
       setTimeout(() => {
-        document.getElementById('report-anchor')?.scrollIntoView({ behavior: 'smooth' });
+        const anchor = document.getElementById('report-anchor');
+        if (anchor) {
+          const yOffset = -100; 
+          const y = anchor.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
       }, 100);
     } catch (err) {
       console.error("Erro ao gerar:", err);
@@ -30,145 +33,148 @@ const App: React.FC = () => {
     }
   };
 
-  const handlePrint = () => {
-    // Dispara o print do navegador. O CSS no index.html cuidará de mostrar apenas o .only-print
-    window.print();
-  };
-
   const resetForm = () => {
     setResult(null);
-    setShowPreview(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      {/* Header Centralizado - Único ponto de controle */}
-      <header className="bg-white border-b border-slate-100 py-4 no-print sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-emerald-600 p-2 rounded-lg flex-shrink-0">
-              <Sun className="w-5 h-5 text-white" />
+    <div className="min-h-screen flex flex-col bg-slate-50 selection:bg-emerald-100 selection:text-emerald-900">
+      {/* Header Centralizado */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-100 py-4 sticky top-0 z-50 shadow-sm px-4 md:px-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-emerald-600 p-2 rounded-xl flex-shrink-0 shadow-lg shadow-emerald-100">
+              <Sun className="w-4 h-4 md:w-5 md:h-5 text-white" />
             </div>
             <div className="flex flex-col justify-center">
-              <h1 className="text-base md:text-lg font-black tracking-[0.1em] text-emerald-800 leading-none uppercase">
+              <h1 className="text-sm md:text-base font-black tracking-tighter text-slate-900 leading-none uppercase">
                 ENVECOM
               </h1>
-              <p className="text-[10px] uppercase tracking-widest text-emerald-600/80 font-black mt-0.5">
-                Simulador Oficial
+              <p className="text-[8px] md:text-[9px] uppercase tracking-widest text-emerald-600 font-bold mt-0.5">
+                Simulador
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-3">
             {result && (
-              <>
-                <button 
-                  type="button"
-                  onClick={resetForm}
-                  className="p-2.5 text-slate-400 hover:text-emerald-600 transition-colors"
-                  title="Novo Cálculo"
-                >
-                  <RefreshCcw className="w-5 h-5" />
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setShowPreview(true)}
-                  className="bg-slate-900 text-white px-5 py-2.5 rounded-full hover:bg-black transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 cursor-pointer"
-                >
-                  <Printer className="w-4 h-4" /> <span>Visualizar / PDF</span>
-                </button>
-              </>
+              <button 
+                type="button"
+                onClick={resetForm}
+                className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-emerald-600 font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all active:scale-95"
+              >
+                <RefreshCcw className="w-3.5 h-3.5" /> 
+                <span className="hidden sm:inline">Reiniciar</span>
+              </button>
             )}
             <a 
               href="https://wa.me/558586529126" 
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-emerald-600 text-white px-5 sm:px-7 py-2.5 rounded-full hover:bg-emerald-700 transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95"
+              className="bg-slate-900 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-full hover:bg-black transition-all text-[9px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 whitespace-nowrap"
             >
-              Associe-se <ArrowRight className="w-4 h-4" />
+              Falar com o consultor! <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
             </a>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow no-print">
-        <div className="bg-emerald-700 text-white pt-24 pb-48 relative overflow-hidden text-center">
-          <div className="max-w-6xl mx-auto px-4">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-12 leading-[1.1] tracking-tight uppercase">
-              ASSOCIAÇÃO ENERGIA VERDE COMPARTILHADA
-            </h2>
+      <main className="flex-grow">
+        <div className="bg-emerald-700 text-white pt-24 pb-48 md:pt-36 md:pb-64 relative overflow-hidden flex flex-col items-center justify-center text-center">
+          <div className="max-w-4xl mx-auto px-6 relative z-10 flex flex-col items-center gap-6 animate-in fade-in slide-in-from-top-4 duration-1000">
+            <div className="w-12 h-1 bg-emerald-400/30 rounded-full mb-2"></div>
+            <p className="text-white text-xs md:text-sm font-black uppercase tracking-[0.5em] leading-relaxed">
+              Associação Energia Verde Compartilhada
+            </p>
+            <div className="flex items-center gap-4 w-full max-w-xs">
+              <div className="h-px flex-grow bg-gradient-to-r from-transparent to-emerald-400/20"></div>
+              <Sun className="w-4 h-4 text-emerald-400/40" />
+              <div className="h-px flex-grow bg-gradient-to-l from-transparent to-emerald-400/20"></div>
+            </div>
+          </div>
+          
+          {/* Decorative Elements */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
+             <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-400 rounded-full blur-[140px]"></div>
+             <div className="absolute top-1/2 -right-32 w-[30rem] h-[30rem] bg-emerald-500 rounded-full blur-[160px]"></div>
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 -mt-24 relative z-10 pb-20">
-          {!result && <ReportForm onSubmit={handleSubmit} isLoading={isLoading} />}
+        <div className="max-w-5xl mx-auto px-4 md:px-8 -mt-24 md:-mt-40 relative z-10 pb-24">
+          {!result && (
+            <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000">
+              <ReportForm onSubmit={handleSubmit} isLoading={isLoading} />
+            </div>
+          )}
 
           {error && (
-            <div className="bg-red-50 border border-red-100 text-red-700 p-6 rounded-2xl flex items-start gap-4 mb-8">
+            <div className="bg-red-50 border border-red-100 text-red-700 p-5 md:p-8 rounded-3xl flex items-start gap-4 mb-10 shadow-sm animate-in zoom-in-95">
               <AlertCircle className="w-6 h-6 mt-0.5 flex-shrink-0" />
-              <p className="text-xs font-bold uppercase tracking-wide">{error}</p>
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest mb-1">Erro no Processamento</p>
+                <p className="text-sm font-medium opacity-80">{error}</p>
+              </div>
             </div>
           )}
 
           <div id="report-anchor" className="scroll-mt-24">
             {result && (
-              <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
-                <ReportDisplay result={result} />
-              </div>
+              <ReportDisplay result={result} />
             )}
           </div>
         </div>
       </main>
 
-      {/* ÁREA DE IMPRESSÃO (Oculta na tela, visível apenas no @media print) */}
-      {result && (
-        <div className="only-print">
-          <ReportDisplay result={result} />
-        </div>
-      )}
-
-      {/* MODAL DE PREVIEW */}
-      {showPreview && result && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 print:hidden animate-in fade-in">
-          <div className="bg-slate-100 w-full max-w-5xl h-[95vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden border border-slate-700">
-            <div className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
-               <div>
-                 <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">Relatório de Viabilidade</h2>
-                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Documento oficial ENVECOM</p>
-               </div>
-               <div className="flex gap-3">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPreview(false)} 
-                    className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-colors text-[10px] uppercase tracking-widest flex items-center gap-2"
-                  >
-                    <X className="w-4 h-4" /> Cancelar
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={handlePrint} 
-                    className="px-6 py-2 bg-emerald-600 text-white font-black hover:bg-emerald-700 rounded-xl transition-colors text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-lg cursor-pointer"
-                  >
-                    <Printer className="w-4 h-4" /> Imprimir / Salvar PDF
-                  </button>
-               </div>
+      <footer className="bg-white border-t border-slate-100 py-12 md:py-16">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center">
+            {/* Branding */}
+            <div className="flex items-center gap-2 mb-8">
+               <Sun className="w-6 h-6 text-emerald-600" />
+               <span className="text-lg font-black tracking-tighter uppercase text-slate-900">ENVECOM</span>
             </div>
-            <div className="flex-1 overflow-y-auto bg-slate-300/50 p-4 sm:p-12 flex justify-center">
-               <div className="bg-white shadow-2xl w-full max-w-[210mm] min-h-[297mm] p-2 sm:p-10 shrink-0 origin-top transform">
-                   <ReportDisplay result={result} />
-               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            
+            {/* Contact Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-12 md:gap-20">
+               <a 
+                 href="https://www.instagram.com/envecom_/" 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 className="flex flex-col items-center gap-2 group"
+               >
+                 <div className="bg-slate-50 p-3 rounded-full group-hover:bg-emerald-50 transition-colors">
+                   <Instagram className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900 transition-colors">Instagram</span>
+               </a>
 
-      <footer className="bg-slate-900 text-slate-200 py-10 no-print">
-        <div className="max-w-6xl mx-auto px-4 text-center">
-            <p className="text-[10px] uppercase tracking-[0.3em] font-black text-slate-600">
-              © 2025 ENVECOM - ASSOCIAÇÃO ENERGIA VERDE COMPARTILHADA
-            </p>
+               <a 
+                 href="tel:558586529126" 
+                 className="flex flex-col items-center gap-2 group"
+               >
+                 <div className="bg-slate-50 p-3 rounded-full group-hover:bg-emerald-50 transition-colors">
+                   <Phone className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900 transition-colors">(85) 98652-9126</span>
+               </a>
+
+               <a 
+                 href="mailto:contato@envecom.org" 
+                 className="flex flex-col items-center gap-2 group"
+               >
+                 <div className="bg-slate-50 p-3 rounded-full group-hover:bg-emerald-50 transition-colors">
+                   <Mail className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900 transition-colors">E-mail</span>
+               </a>
+            </div>
+
+            <div className="mt-12 pt-8 border-t border-slate-50 w-full">
+              <p className="text-[9px] uppercase tracking-[0.3em] font-black text-slate-300">
+                ASSOCIAÇÃO ENERGIA VERDE COMPARTILHADA © 2025
+              </p>
+            </div>
         </div>
       </footer>
     </div>
