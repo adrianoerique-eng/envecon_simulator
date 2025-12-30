@@ -32,7 +32,6 @@ export const compressImage = async (base64Str: string, maxWidth = 2560, quality 
       if (!ctx) return reject(new Error("Erro no processamento da imagem"));
       
       ctx.drawImage(img, 0, 0, width, height);
-      // JPEG com alta qualidade para não perder detalhes dos números
       const dataUrl = canvas.toDataURL('image/jpeg', quality);
       resolve(dataUrl.split(',')[1]);
     };
@@ -41,9 +40,9 @@ export const compressImage = async (base64Str: string, maxWidth = 2560, quality 
 };
 
 export const extractDataFromImage = async (base64Image: string, mimeType: string): Promise<Partial<BillInputs>> => {
+  // Instanciação dentro da função conforme diretrizes para evitar stale closures da chave
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Prompt original focado em extração de dados brutos
   const prompt = `Analise esta fatura de energia e extraia os seguintes dados exatamente no formato JSON abaixo. 
   Importante: capture apenas os números decimais usando ponto (ex: 0.75832) e ignore símbolos de moeda (R$).
   
@@ -83,8 +82,8 @@ export const extractDataFromImage = async (base64Image: string, mimeType: string
     return JSON.parse(text);
   } catch (error: any) {
     console.error("Erro Gemini:", error);
-    if (error.message?.includes("API_KEY")) {
-      throw new Error("Erro de Configuração: Verifique se a API_KEY está correta no Vercel.");
+    if (error.message?.includes("API key not found") || error.message?.includes("API_KEY")) {
+      throw new Error("Chave API não configurada. Por favor, clique no botão de configuração no topo.");
     }
     throw new Error("Não foi possível extrair os dados. Tente tirar uma foto mais de perto e com melhor iluminação.");
   }

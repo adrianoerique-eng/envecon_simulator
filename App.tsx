@@ -1,15 +1,53 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReportForm from './components/ReportForm';
 import ReportDisplay from './components/ReportDisplay';
 import { generateEnvecomReport } from './services/geminiService';
 import { BillInputs, ReportResult } from './types';
-import { Sun, ArrowRight, AlertCircle, RefreshCcw, Instagram, Phone, Mail } from 'lucide-react';
+import { Sun, ArrowRight, AlertCircle, RefreshCcw, Instagram, Phone, Mail, Key } from 'lucide-react';
+
+// Define the AIStudio interface globally to align with potential platform definitions
+declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+  interface Window {
+    // Ensuring the property type matches the AIStudio interface name to avoid conflicts
+    aistudio: AIStudio;
+  }
+}
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ReportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(true);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (process.env.API_KEY) {
+        setHasApiKey(true);
+        return;
+      }
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        setHasApiKey(hasKey);
+      } else {
+        setHasApiKey(false);
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleOpenKeySelector = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      setHasApiKey(true); // Assume sucesso após o trigger
+    } else {
+      alert("Para rodar no browser fora do ambiente local, configure a variável GEMINI_API_KEY no seu provedor de hospedagem.");
+    }
+  };
 
   const handleSubmit = async (inputs: BillInputs) => {
     setIsLoading(true);
@@ -25,9 +63,9 @@ const App: React.FC = () => {
           window.scrollTo({ top: y, behavior: 'smooth' });
         }
       }, 100);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao gerar:", err);
-      setError("Ocorreu um erro ao processar sua fatura. Verifique os dados ou tente novamente.");
+      setError(err.message || "Ocorreu um erro ao processar sua fatura. Verifique os dados ou tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -58,6 +96,15 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3">
+            {!hasApiKey && (
+              <button 
+                onClick={handleOpenKeySelector}
+                className="flex items-center gap-2 px-3 py-2 bg-amber-100 text-amber-700 rounded-lg font-black text-[9px] uppercase tracking-widest animate-pulse"
+              >
+                <Key className="w-3.5 h-3.5" /> 
+                Configurar Chave
+              </button>
+            )}
             {result && (
               <button 
                 type="button"
@@ -74,7 +121,7 @@ const App: React.FC = () => {
               rel="noopener noreferrer"
               className="bg-slate-900 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-full hover:bg-black transition-all text-[9px] md:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 whitespace-nowrap"
             >
-              Falar com o consultor! <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
+              Consultor <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
             </a>
           </div>
         </div>
@@ -95,7 +142,6 @@ const App: React.FC = () => {
             </div>
           </div>
           
-          {/* Decorative Elements */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
              <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-400 rounded-full blur-[140px]"></div>
              <div className="absolute top-1/2 -right-32 w-[30rem] h-[30rem] bg-emerald-500 rounded-full blur-[160px]"></div>
@@ -129,13 +175,11 @@ const App: React.FC = () => {
 
       <footer className="bg-white border-t border-slate-100 py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center">
-            {/* Branding */}
             <div className="flex items-center gap-2 mb-8">
                <Sun className="w-6 h-6 text-emerald-600" />
                <span className="text-lg font-black tracking-tighter uppercase text-slate-900">ENVECOM</span>
             </div>
             
-            {/* Contact Info */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-12 md:gap-20">
                <a 
                  href="https://www.instagram.com/envecom_/" 

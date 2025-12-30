@@ -205,14 +205,15 @@ const ReportDisplay: React.FC<Props> = ({ result }) => {
           </button>
         </div>
 
-        {/* Cabeçalho - Corrigido para evitar sobreposição */}
-        <div className="flex flex-col items-center mb-16 md:mb-24 text-center px-4">
-            <div className="w-16 md:w-24 h-1.5 md:h-2 bg-emerald-600 rounded-full mb-10 md:mb-14"></div>
-            <div className="flex flex-col items-center gap-6 md:gap-10">
-              <h1 className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter uppercase leading-tight">
+        {/* Cabeçalho - Layout Espaçado Anti-Sobreposição */}
+        <div className="flex flex-col items-center text-center px-4 mb-20 md:mb-32">
+            <div className="w-16 md:w-24 h-1.5 md:h-2 bg-emerald-600 rounded-full mb-12 md:mb-16"></div>
+            <div className="relative flex flex-col items-center">
+              <h1 className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter uppercase leading-[1.1] mb-12 md:mb-20">
                 SIMULAÇÃO
               </h1>
-              <p className="text-[10px] md:text-[14px] text-slate-400 font-bold uppercase tracking-[0.4em] md:tracking-[0.6em] border-t border-slate-100 pt-6 md:pt-8 w-full max-w-xs">
+              <div className="w-full max-w-xs h-px bg-slate-100 mb-8"></div>
+              <p className="text-[10px] md:text-[14px] text-slate-400 font-bold uppercase tracking-[0.4em] md:tracking-[0.6em] inline-block">
                   GERADO EM {new Date().toLocaleDateString('pt-BR')}
               </p>
             </div>
